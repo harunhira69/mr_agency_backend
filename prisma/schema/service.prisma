@@ -1,0 +1,127 @@
+model ServiceCategory {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(120)
+  description String?  @db.Text
+  iconUrl     String?  @db.Text
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  services Service[]
+
+  @@index([isActive, sortOrder])
+  @@map("service_categories")
+}
+
+model Service {
+  id                    String        @id @default(cuid())
+  categoryId            String?
+  name                  String        @db.VarChar(160)
+  slug                  String        @unique @db.VarChar(180)
+  shortDescription      String        @db.VarChar(320)
+  description           String        @db.Text
+  coverImageUrl         String?       @db.Text
+  status                ServiceStatus @default(DRAFT)
+  estimatedDeliveryDays Int?
+  revisionLimit         Int?
+  isFeatured            Boolean       @default(false)
+  sortOrder             Int           @default(0)
+  seoTitle              String?       @db.VarChar(180)
+  seoDescription        String?       @db.VarChar(320)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  deletedAt             DateTime?
+
+  category     ServiceCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  packages     ServicePackage[]
+  features     ServiceFeature[]
+  requirements ServiceRequirement[]
+  orderItems   OrderItem[]
+  caseStudies  CaseStudy[]
+  testimonials Testimonial[]
+
+  @@index([categoryId, status])
+  @@index([status, isFeatured, sortOrder])
+  @@map("services")
+}
+
+model ServicePackage {
+  id           String      @id @default(cuid())
+  serviceId    String
+  name         String      @db.VarChar(100)
+  slug         String      @db.VarChar(120)
+  tier         PricingTier @default(BASIC)
+  description  String?     @db.Text
+  price        Decimal     @db.Decimal(18, 6)
+  currency     String      @default("USDT") @db.VarChar(16)
+  deliveryDays Int
+  revisions    Int         @default(0)
+  isPopular    Boolean     @default(false)
+  isActive     Boolean     @default(true)
+  sortOrder    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  service    Service                 @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  features   ServicePackageFeature[]
+  orderItems OrderItem[]
+
+  @@unique([serviceId, slug])
+  @@index([serviceId, isActive, sortOrder])
+  @@map("service_packages")
+}
+
+model ServiceFeature {
+  id          String   @id @default(cuid())
+  serviceId   String
+  title       String   @db.VarChar(180)
+  description String?  @db.Text
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, sortOrder])
+  @@map("service_features")
+}
+
+model ServicePackageFeature {
+  id          String   @id @default(cuid())
+  packageId   String
+  title       String   @db.VarChar(180)
+  description String?  @db.Text
+  isIncluded  Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  package ServicePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId, sortOrder])
+  @@map("service_package_features")
+}
+
+model ServiceRequirement {
+  id          String               @id @default(cuid())
+  serviceId   String
+  key         String               @db.VarChar(100)
+  label       String               @db.VarChar(180)
+  type        RequirementFieldType
+  description String?              @db.Text
+  placeholder String?              @db.VarChar(255)
+  options     Json?
+  isRequired  Boolean              @default(true)
+  sortOrder   Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  service Service                 @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  values  OrderRequirementValue[]
+
+  @@unique([serviceId, key])
+  @@index([serviceId, sortOrder])
+  @@map("service_requirements")
+}

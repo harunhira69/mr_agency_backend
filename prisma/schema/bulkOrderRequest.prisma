@@ -1,0 +1,32 @@
+model BulkOrderRequest {
+  id                  String          @id @default(cuid())
+  requestNumber       String          @unique @db.VarChar(40)
+  customerId          String?
+  reviewedById        String?
+  contactName         String          @db.VarChar(160)
+  contactEmail        String          @db.VarChar(320)
+  company             String?         @db.VarChar(160)
+  websiteUrl          String?         @db.Text
+  serviceDetails      String          @db.Text
+  estimatedQuantity   Int?
+  budgetMin           Decimal?        @db.Decimal(18, 6)
+  budgetMax           Decimal?        @db.Decimal(18, 6)
+  currency            String          @default("USDT") @db.VarChar(16)
+  desiredDeliveryDate DateTime?
+  attachmentUrls      Json?
+  status              BulkOrderStatus @default(PENDING)
+  quotedAmount        Decimal?        @db.Decimal(18, 6)
+  adminNotes          String?         @db.Text
+  quotedAt            DateTime?
+  acceptedAt          DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  customer   User? @relation("BulkRequestCustomer", fields: [customerId], references: [id], onDelete: SetNull)
+  reviewedBy User? @relation("BulkRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([customerId, createdAt])
+  @@index([reviewedById, status])
+  @@index([status, createdAt])
+  @@map("bulk_order_requests")
+}

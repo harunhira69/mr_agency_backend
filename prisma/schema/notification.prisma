@@ -1,0 +1,27 @@
+model NotificationLog {
+  id                String              @id @default(cuid())
+  userId            String?
+  orderId           String?
+  channel           NotificationChannel
+  recipient         String              @db.VarChar(320)
+  templateKey       String              @db.VarChar(120)
+  subject           String?             @db.VarChar(255)
+  payload           Json?
+  status            NotificationStatus  @default(QUEUED)
+  providerMessageId String?             @db.VarChar(191)
+  errorMessage      String?             @db.Text
+  attempts          Int                 @default(0)
+  scheduledAt       DateTime?
+  sentAt            DateTime?
+  failedAt          DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([status, scheduledAt])
+  @@index([userId, createdAt])
+  @@index([orderId])
+  @@map("notification_logs")
+}

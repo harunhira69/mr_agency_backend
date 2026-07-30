@@ -1,0 +1,45 @@
+model SupportTicket {
+  id            String         @id @default(cuid())
+  ticketNumber  String         @unique @db.VarChar(40)
+  customerId    String
+  assignedToId  String?
+  orderId       String?
+  subject       String         @db.VarChar(220)
+  category      String?        @db.VarChar(100)
+  status        TicketStatus   @default(OPEN)
+  priority      TicketPriority @default(NORMAL)
+  lastMessageAt DateTime       @default(now())
+  closedAt      DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  customer   User            @relation("TicketCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  assignedTo User?           @relation("TicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  order      Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  messages   TicketMessage[]
+
+  @@index([customerId, status])
+  @@index([assignedToId, status])
+  @@index([orderId])
+  @@index([status, priority, lastMessageAt])
+  @@map("support_tickets")
+}
+
+model TicketMessage {
+  id         String           @id @default(cuid())
+  ticketId   String
+  senderId   String?
+  senderType TicketSenderType
+  message    String           @db.Text
+  isInternal Boolean          @default(false)
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User?         @relation("TicketMessageSender", fields: [senderId], references: [id], onDelete: SetNull)
+  files  FileAsset[]
+
+  @@index([ticketId, createdAt])
+  @@index([senderId])
+  @@map("ticket_messages")
+}

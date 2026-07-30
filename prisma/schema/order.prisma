@@ -1,0 +1,115 @@
+model Order {
+  id                 String        @id @default(cuid())
+  orderNumber        String        @unique @db.VarChar(40)
+  customerId         String
+  assignedToId       String?
+  status             OrderStatus   @default(PENDING_PAYMENT)
+  priority           OrderPriority @default(NORMAL)
+  currency           String        @default("USDT") @db.VarChar(16)
+  subtotal           Decimal       @db.Decimal(18, 6)
+  discountAmount     Decimal       @default(0) @db.Decimal(18, 6)
+  totalAmount        Decimal       @db.Decimal(18, 6)
+  customerNotes      String?       @db.Text
+  internalNotes      String?       @db.Text
+  paymentDueAt       DateTime?
+  paidAt             DateTime?
+  startedAt          DateTime?
+  deliveredAt        DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?       @db.Text
+  clientIp           String?       @db.VarChar(64)
+  userAgent          String?       @db.Text
+  metadata           Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  customer      User              @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Restrict)
+  assignedTo    User?             @relation("AssignedOrders", fields: [assignedToId], references: [id], onDelete: SetNull)
+  items         OrderItem[]
+  invoice       Invoice?
+  transactions  Transaction[]
+  notifications NotificationLog[]
+  tickets       SupportTicket[]
+  referral      Referral?
+  files         FileAsset[]
+
+  @@index([customerId, createdAt])
+  @@index([assignedToId, status])
+  @@index([status, paymentDueAt])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                   String          @id @default(cuid())
+  orderId              String
+  serviceId            String
+  servicePackageId     String?
+  serviceNameSnapshot  String          @db.VarChar(160)
+  packageNameSnapshot  String?         @db.VarChar(100)
+  descriptionSnapshot  String?         @db.Text
+  unitPrice            Decimal         @db.Decimal(18, 6)
+  quantity             Int             @default(1)
+  totalPrice           Decimal         @db.Decimal(18, 6)
+  currency             String          @default("USDT") @db.VarChar(16)
+  deliveryDaysSnapshot Int?
+  status               OrderItemStatus @default(PENDING)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  order             Order                   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service           Service                 @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  servicePackage    ServicePackage?         @relation(fields: [servicePackageId], references: [id], onDelete: SetNull)
+  requirementValues OrderRequirementValue[]
+
+  @@index([orderId, status])
+  @@index([serviceId])
+  @@index([servicePackageId])
+  @@map("order_items")
+}
+
+model OrderRequirementValue {
+  id                   String   @id @default(cuid())
+  orderItemId          String
+  serviceRequirementId String?
+  fieldKeySnapshot     String   @db.VarChar(100)
+  labelSnapshot        String   @db.VarChar(180)
+  value                Json
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  orderItem          OrderItem           @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  serviceRequirement ServiceRequirement? @relation(fields: [serviceRequirementId], references: [id], onDelete: SetNull)
+
+  @@unique([orderItemId, fieldKeySnapshot])
+  @@index([serviceRequirementId])
+  @@map("order_requirement_values")
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  invoiceNumber  String        @unique @db.VarChar(40)
+  orderId        String        @unique
+  status         InvoiceStatus @default(ISSUED)
+  currency       String        @default("USDT") @db.VarChar(16)
+  subtotal       Decimal       @db.Decimal(18, 6)
+  discountAmount Decimal       @default(0) @db.Decimal(18, 6)
+  totalAmount    Decimal       @db.Decimal(18, 6)
+  billingName    String        @db.VarChar(160)
+  billingEmail   String        @db.VarChar(320)
+  billingAddress Json?
+  issuedAt       DateTime      @default(now())
+  dueAt          DateTime?
+  paidAt         DateTime?
+  pdfUrl         String?       @db.Text
+  notes          String?       @db.Text
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@index([status, dueAt])
+  @@map("invoices")
+}

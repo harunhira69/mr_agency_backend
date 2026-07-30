@@ -1,0 +1,31 @@
+model FileAsset {
+  id              String        @id @default(cuid())
+  uploaderId      String?
+  orderId         String?
+  ticketMessageId String?
+  blogPostId      String?
+  caseStudyId     String?
+  type            FileAssetType @default(OTHER)
+  storageProvider String        @db.VarChar(80)
+  storageKey      String        @unique @db.VarChar(255)
+  url             String        @db.Text
+  fileName        String        @db.VarChar(255)
+  mimeType        String        @db.VarChar(120)
+  sizeBytes       Int
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  deletedAt       DateTime?
+
+  uploader      User?          @relation("FileUploader", fields: [uploaderId], references: [id], onDelete: SetNull)
+  order         Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  ticketMessage TicketMessage? @relation(fields: [ticketMessageId], references: [id], onDelete: Cascade)
+  blogPost      BlogPost?      @relation(fields: [blogPostId], references: [id], onDelete: SetNull)
+  caseStudy     CaseStudy?     @relation(fields: [caseStudyId], references: [id], onDelete: SetNull)
+
+  @@index([uploaderId, createdAt])
+  @@index([orderId])
+  @@index([ticketMessageId])
+  @@index([blogPostId])
+  @@index([caseStudyId])
+  @@map("file_assets")
+}

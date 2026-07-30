@@ -1,0 +1,212 @@
+enum UserRole {
+  CUSTOMER
+  TEAM_MEMBER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+  DELETED
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  TWO_FACTOR_CHALLENGE
+}
+
+enum ServiceStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PricingTier {
+  BASIC
+  STANDARD
+  PREMIUM
+  CUSTOM
+}
+
+enum RequirementFieldType {
+  TEXT
+  TEXTAREA
+  URL
+  NUMBER
+  SELECT
+  MULTI_SELECT
+  FILE
+  BOOLEAN
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAYMENT_DETECTED
+  PAID
+  PROCESSING
+  AWAITING_CUSTOMER
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  DISPUTED
+}
+
+enum OrderItemStatus {
+  PENDING
+  PROCESSING
+  AWAITING_CUSTOMER
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderPriority {
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  OVERDUE
+  VOID
+  REFUNDED
+}
+
+enum PaymentProvider {
+  MANUAL
+  NOWPAYMENTS
+  CRYPTOMUS
+  BINANCE_PAY
+  COINBASE_COMMERCE
+  CUSTOM
+}
+
+enum CryptoNetwork {
+  TRC20
+  BEP20
+  ERC20
+  POLYGON
+  SOLANA
+  OTHER
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  DETECTED
+  CONFIRMING
+  CONFIRMED
+  FAILED
+  EXPIRED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum NotificationChannel {
+  EMAIL
+  TELEGRAM
+  SMS
+  IN_APP
+  WEBHOOK
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
+  REWARDED
+  CANCELLED
+}
+
+enum RewardType {
+  FIXED
+  PERCENTAGE
+}
+
+enum BulkOrderStatus {
+  PENDING
+  REVIEWING
+  QUOTED
+  ACCEPTED
+  REJECTED
+  CLOSED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketSenderType {
+  CUSTOMER
+  AGENT
+  SYSTEM
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+  WEBHOOK
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PAYMENT_VERIFY
+  STATUS_CHANGE
+  EXPORT
+  OTHER
+}
+
+enum ContactMessageStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  SPAM
+}
+
+enum FileAssetType {
+  AVATAR
+  SERVICE_IMAGE
+  ORDER_REQUIREMENT
+  ORDER_DELIVERABLE
+  TICKET_ATTACHMENT
+  BLOG_IMAGE
+  CASE_STUDY_IMAGE
+  OTHER
+}

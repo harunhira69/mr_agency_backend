@@ -1,0 +1,61 @@
+model Transaction {
+  id                    String          @id @default(cuid())
+  orderId               String
+  invoiceId             String?
+  provider              PaymentProvider
+  providerPaymentId     String?         @db.VarChar(191)
+  providerPaymentKey    String?         @unique @db.VarChar(255)
+  providerInvoiceId     String?         @db.VarChar(191)
+  status                PaymentStatus   @default(CREATED)
+  currency              String          @default("USDT") @db.VarChar(16)
+  network               CryptoNetwork?
+  amountExpected        Decimal         @db.Decimal(18, 8)
+  amountReceived        Decimal         @default(0) @db.Decimal(18, 8)
+  feeAmount             Decimal         @default(0) @db.Decimal(18, 8)
+  exchangeRate          Decimal?        @db.Decimal(24, 12)
+  payAddress            String?         @db.Text
+  txHash                String?         @db.VarChar(191)
+  confirmations         Int             @default(0)
+  requiredConfirmations Int             @default(1)
+  webhookVerified       Boolean         @default(false)
+  expiresAt             DateTime?
+  detectedAt            DateTime?
+  confirmedAt           DateTime?
+  failedAt              DateTime?
+  refundedAt            DateTime?
+  failureReason         String?         @db.Text
+  rawProviderData       Json?
+  metadata              Json?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  order         Order                 @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  invoice       Invoice?              @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  webhookEvents PaymentWebhookEvent[]
+
+  @@index([orderId, status])
+  @@index([invoiceId])
+  @@index([txHash])
+  @@index([status, expiresAt])
+  @@map("transactions")
+}
+
+model PaymentWebhookEvent {
+  id              String          @id @default(cuid())
+  transactionId   String?
+  provider        PaymentProvider
+  idempotencyKey  String          @unique @db.VarChar(191)
+  eventType       String          @db.VarChar(120)
+  signatureValid  Boolean         @default(false)
+  payload         Json
+  processedAt     DateTime?
+  processingError String?         @db.Text
+  receivedAt      DateTime        @default(now())
+
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([provider, eventType])
+  @@index([transactionId])
+  @@index([processedAt])
+  @@map("payment_webhook_events")
+}
