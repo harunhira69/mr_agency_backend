@@ -1,0 +1,9 @@
+model Testimonial {
+  id         String   @id @default(cuid())
+  authorName String
+  authorRole String
+  rating     Int
+  content    String
+  isFeatured Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}

@@ -1,0 +1,19 @@
+enum TxStatus {
+  WAITING
+  CONFIRMED
+  FAILED
+  EXPIRED
+}
+
+model Transaction {
+  id            String    @id @default(cuid())
+  orderId       String    @unique
+  walletAddress String
+  network       String
+  txHash        String?
+  status        TxStatus  @default(WAITING)
+  confirmedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+}

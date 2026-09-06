@@ -1,0 +1,12 @@
+model BlogPost {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  content       String
+  coverImageUrl String?
+  authorId      String
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  author User @relation(fields: [authorId], references: [id])
+}

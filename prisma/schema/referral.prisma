@@ -1,0 +1,28 @@
+enum ReferralStatus {
+  PENDING
+  REWARDED
+}
+
+model ReferralCode {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  code      String   @unique
+  usesCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id])
+  referrals Referral[]
+}
+
+model Referral {
+  id             String         @id @default(cuid())
+  referralCodeId String
+  referrerId     String
+  referredUserId String         @unique
+  rewardStatus   ReferralStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+
+  referralCode ReferralCode @relation(fields: [referralCodeId], references: [id])
+  referrer     User         @relation("ReferralsMade", fields: [referrerId], references: [id])
+  referredUser User         @relation("ReferralReceived", fields: [referredUserId], references: [id])
+}

@@ -1,0 +1,9 @@
+model NotificationLog {
+  id       String   @id @default(cuid())
+  orderId  String
+  type     String
+  channel  String
+  sentAt   DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+}

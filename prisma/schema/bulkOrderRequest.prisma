@@ -1,0 +1,15 @@
+enum BulkRequestStatus {
+  NEW
+  CONTACTED
+  QUOTED
+  CLOSED
+}
+
+model BulkOrderRequest {
+  id        String             @id @default(cuid())
+  name      String
+  email     String
+  details   String
+  status    BulkRequestStatus  @default(NEW)
+  createdAt DateTime           @default(now())
+}

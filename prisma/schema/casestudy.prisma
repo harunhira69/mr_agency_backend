@@ -1,0 +1,10 @@
+model CaseStudy {
+  id                   String   @id @default(cuid())
+  siteLabel            String
+  serviceId            String
+  trafficGrowthPercent Decimal  @db.Decimal(6, 2)
+  chartData            Json
+  createdAt            DateTime @default(now())
+
+  service Service @relation(fields: [serviceId], references: [id])
+}

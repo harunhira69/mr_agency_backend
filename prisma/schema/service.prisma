@@ -1,0 +1,12 @@
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  tier        String
+  priceUsdt   Decimal  @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  orders      Order[]
+  caseStudies CaseStudy[]
+}

@@ -1,7 +1,26 @@
-model User {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  email     String   @unique
-  name      String?
+enum Role {
+  CLIENT
+  ADMIN
+}
 
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  passwordHash String
+  role         Role       @default(CLIENT)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+
+  orders            Order[]
+  blogPosts         BlogPost[]
+  auditLogs         AuditLog[]
+  referralCode      ReferralCode?
+  referralsMade     Referral[]    @relation("ReferralsMade")
+  referralReceived  Referral?     @relation("ReferralReceived")
 }
