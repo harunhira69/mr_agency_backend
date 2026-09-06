@@ -1,23 +1,29 @@
 import { Response } from "express";
 
-
-type TResponse<T> = {
-    success:boolean;
-    statusCode:number;
-    message:string;
-    data: T;
-
+interface SendResponseOptions<T> {
+  statusCode?: number;
+  success?: boolean;
+  message: string;
+  data?: T;
+  meta?: Record<string, unknown>;
 }
 
+export const sendResponse = <T>(
+  res: Response,
+  options: SendResponseOptions<T>
+) => {
+  const {
+    statusCode = 200,
+    success = true,
+    message,
+    data,
+    meta,
+  } = options;
 
-
-
-export const sendResponse = <T>(res:Response,data:TResponse<T>)=>{
-    res.status(data.statusCode).json({
-        success:data.success,
-        statusCode:data.statusCode,
-        message:data.message,
-        data:data.data,
-   })
-
-}
+  return res.status(statusCode).json({
+    success,
+    message,
+    ...(data !== undefined && { data }),
+    ...(meta !== undefined && { meta }),
+  });
+};

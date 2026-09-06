@@ -1,15 +1,38 @@
-import { NextFunction, Request, Response } from "express";
-import { JwtPayload } from "jsonwebtoken";
-import httpStatus from "http-status";
-import { prisma } from "../lib/prisma";
-import config from "../config";
-import { catchAsync } from "../utils/catchAsync";
-import { jwtUtils } from "../utils/jwt";
+import type {
+  NextFunction,
+  Request,
+  Response,
+} from "express";
 
-type AuthUser = {
+import config from "../config/index.js";
+import { query } from "../lib/db.js";
+
+import {
+  forbidden,
+  unauthorized,
+} from "../utils/errors.js";
+
+import {
+  jwtUtils,
+  type AccessTokenPayload,
+} from "../utils/jwt.js";
+
+export type UserRole =
+  | "CUSTOMER"
+  | "TEAM_MEMBER"
+  | "ADMIN"
+  | "SUPER_ADMIN";
+
+export type AuthUser = {
   id: string;
   email: string;
-  role: "CUSTOMER" | "TEAM_MEMBER" | "ADMIN" | "SUPER_ADMIN";
+  role: UserRole;
+  status:
+    | "PENDING_VERIFICATION"
+    | "ACTIVE"
+    | "SUSPENDED"
+    | "BLOCKED"
+    | "DELETED";
 };
 
 declare global {
@@ -20,89 +43,125 @@ declare global {
   }
 }
 
-type DecodeUser = JwtPayload & {
-  id: string;
-  email: string;
-  role: AuthUser["role"];
-};
+export async function requireAuth(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) {
+  try {
+    const header =
+      req.headers.authorization;
 
-const createError = (message: string, statusCode: number) => {
-  const error = new Error(message) as Error & { statusCode?: number };
-  error.statusCode = statusCode;
-  return error;
-};
-
-export const requireAuth = catchAsync(
-  async (req: Request, _res: Response, next: NextFunction) => {
-    const authorization = req.headers.authorization;
     const token =
-      authorization?.startsWith("Bearer ") ? authorization.split(" ")[1] : undefined;
+      header?.startsWith("Bearer ")
+        ? header
+            .slice(7)
+            .trim()
+        : undefined;
 
     if (!token) {
-      throw createError(
+      throw unauthorized(
         "You are not logged in. Please log in first.",
-        httpStatus.UNAUTHORIZED
       );
     }
 
-    const verified = jwtUtils.verifyToken(
-      token,
-      config.jwt_access_secret as string
-    );
+    let decoded:
+      AccessTokenPayload;
 
-    if (!verified.success || !verified.data) {
-      throw createError(
-        verified.message || "Invalid or expired token",
-        httpStatus.UNAUTHORIZED
+    try {
+      decoded =
+        jwtUtils.verifyAccessToken(
+          token,
+          config.jwtAccessSecret,
+        );
+    } catch {
+      throw unauthorized(
+        "Invalid or expired access token",
       );
     }
 
-    const decoded = verified.data as DecodeUser;
+    const result =
+      await query<AuthUser>(
+        `
+        SELECT
+          id,
+          email,
+          role,
+          status
+        FROM users
+        WHERE id = $1
+          AND "deletedAt" IS NULL
+        LIMIT 1
+        `,
+        [decoded.id],
+      );
 
-    if (!decoded.id || !decoded.email || !decoded.role) {
-      throw createError("Invalid token payload", httpStatus.UNAUTHORIZED);
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        status: true,
-      },
-    });
+    const user =
+      result.rows[0];
 
     if (!user) {
-      throw createError("User not found. Please log in again.", httpStatus.UNAUTHORIZED);
-    }
-
-    if (user.status === "SUSPENDED" || user.status === "BLOCKED" || user.status === "DELETED") {
-      throw createError(
-        "Your account has been suspended. Please contact support.",
-        httpStatus.FORBIDDEN
+      throw unauthorized(
+        "User not found. Please log in again.",
       );
     }
 
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    };
+    if (
+      [
+        "SUSPENDED",
+        "BLOCKED",
+        "DELETED",
+      ].includes(user.status)
+    ) {
+      throw forbidden(
+        "Your account is not allowed to access this resource.",
+      );
+    }
+
+    req.user = user;
 
     next();
+  } catch (error) {
+    next(error);
   }
-);
+}
 
-export const requireRole = (...roles: AuthUser["role"][]) => {
-  return catchAsync(async (req: Request, _res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      throw createError(
-        "Forbidden. You don't have permission to access this resource.",
-        httpStatus.FORBIDDEN
+export function requireRole(
+  ...roles: UserRole[]
+) {
+  return (
+    req: Request,
+    _res: Response,
+    next: NextFunction,
+  ) => {
+    if (!req.user) {
+      return next(
+        unauthorized(),
       );
     }
 
-    next();
-  });
-};
+    if (
+      !roles.includes(
+        req.user.role,
+      )
+    ) {
+      return next(
+        forbidden(),
+      );
+    }
+
+    return next();
+  };
+}
+
+export const requireAdmin =
+  requireRole(
+    "ADMIN",
+    "SUPER_ADMIN",
+  );
+
+export const requireStaff =
+  requireRole(
+    "TEAM_MEMBER",
+    "ADMIN",
+    "SUPER_ADMIN",
+  );

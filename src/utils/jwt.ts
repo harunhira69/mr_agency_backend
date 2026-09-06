@@ -1,37 +1,67 @@
-import jwt, { JwtPayload,  SignOptions } from "jsonwebtoken"
+import jwt, {
+  type JwtPayload,
+  type SignOptions,
+} from "jsonwebtoken";
 
-const createToken = (payload:JwtPayload,secret:string,expiresIn:SignOptions)=>{
-    const token = jwt.sign(payload,secret,
-        {
-        expiresIn 
-    } as SignOptions
-)
+export type UserRole =
+  | "CUSTOMER"
+  | "TEAM_MEMBER"
+  | "ADMIN"
+  | "SUPER_ADMIN";
 
-    return token
+export type AccessTokenPayload = JwtPayload & {
+  id: string;
+  email: string;
+  role: UserRole;
+};
 
-}
-
-const verifyToken =(token:string,secret:string)=>{
-    try {
-    const validToken= jwt.verify(token,secret);
-    return {
-        success:true,
-        data:validToken,
-        message:"Token verified successfully"
-    }
-    } catch (error:any) {
-        const err = error as Error;
-        return {
-            success:false,
-            data:null,
-            message:err.message || "Invalid Token"
-        }
-    
-    }
-
-}
+export type RefreshTokenPayload = JwtPayload & {
+  id: string;
+};
 
 export const jwtUtils = {
-    createToken,
-    verifyToken
-}
+  createAccessToken(
+    payload: Omit<
+      AccessTokenPayload,
+      keyof JwtPayload
+    >,
+    secret: string,
+    expiresIn: string,
+  ) {
+    return jwt.sign(payload, secret, {
+      expiresIn:
+        expiresIn as SignOptions["expiresIn"],
+    });
+  },
+
+  verifyAccessToken(
+    token: string,
+    secret: string,
+  ) {
+    return jwt.verify(
+      token,
+      secret,
+    ) as AccessTokenPayload;
+  },
+
+  createRefreshToken(
+    payload: { id: string },
+    secret: string,
+    expiresIn: string,
+  ) {
+    return jwt.sign(payload, secret, {
+      expiresIn:
+        expiresIn as SignOptions["expiresIn"],
+    });
+  },
+
+  verifyRefreshToken(
+    token: string,
+    secret: string,
+  ) {
+    return jwt.verify(
+      token,
+      secret,
+    ) as RefreshTokenPayload;
+  },
+};
