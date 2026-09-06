@@ -12,13 +12,13 @@
     "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prisma:format": "prisma format",
-  "prisma:validate": "prisma validate",
-  "prisma:generate": "prisma generate",
-  "prisma:migrate": "prisma migrate dev",
-  "prisma:deploy": "prisma migrate deploy",
-  "prisma:status": "prisma migrate status",
-  "prisma:studio": "prisma studio",
-  "prisma:seed": "prisma db seed"
+    "prisma:validate": "prisma validate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:status": "prisma migrate status",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "prisma db seed"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
@@ -33,12 +33,15 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
+    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
     "http-status": "^2.1.0",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "zod": "^4.5.4"
   }
 }

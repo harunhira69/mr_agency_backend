@@ -2,7 +2,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import config from "./config";
+import { config } from "./config";
 import authRoutes from "./modules/auth/auth.routes";
 
 const app = express();

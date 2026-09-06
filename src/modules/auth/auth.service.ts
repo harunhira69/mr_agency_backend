@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import httpStatus from "http-status";
 import { SignOptions } from "jsonwebtoken";
 import { prisma } from "../../lib/prisma";
-import config from "../../config";
+import { config } from "../../config";
 import { jwtUtils } from "../../utils/jwt";
 import { LoginInput, RegisterInput } from "./auth.schema";
 

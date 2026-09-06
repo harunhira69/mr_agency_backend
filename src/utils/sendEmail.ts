@@ -1,4 +1,4 @@
-import config from "../config/index.js";
+import { config } from "../config/index.js";
 
 export async function sendEmail(
   to: string,
