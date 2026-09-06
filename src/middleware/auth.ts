@@ -1,113 +1,107 @@
 import { NextFunction, Request, Response } from "express";
+import { JwtPayload } from "jsonwebtoken";
+import httpStatus from "http-status";
+import { prisma } from "../lib/prisma";
+import config from "../config";
 import { catchAsync } from "../utils/catchAsync";
 import { jwtUtils } from "../utils/jwt";
-import config from "../config";
-import { JwtPayload } from "jsonwebtoken";
-import { prisma } from "../lib/prisma";
-import httpStatus from "http-status";
+
+type AuthUser = {
+  id: string;
+  email: string;
+  role: "CUSTOMER" | "TEAM_MEMBER" | "ADMIN" | "SUPER_ADMIN";
+};
 
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: string;
-        name: string;
-        email: string;
-        // role: Role;
-        // status: UserStatus;
-      };
+      user?: AuthUser;
     }
   }
 }
 
-type DecodeUser = JwtPayload  & {
-  id:string;
-  name:string;
-  email:string;
-//   role:Role;
-//   status:UserStatus;
-}
+type DecodeUser = JwtPayload & {
+  id: string;
+  email: string;
+  role: AuthUser["role"];
+};
 
-const createError = (message:string,statusCode:number,errorDetails?:unknown)=>{
-  const error = new Error(message) as Error & {
-    statusCode?:number;
-    errorDetails?:unknown;
-  };
+const createError = (message: string, statusCode: number) => {
+  const error = new Error(message) as Error & { statusCode?: number };
   error.statusCode = statusCode;
-  if(errorDetails){
-    error.errorDetails = errorDetails;
-  }
   return error;
-}
+};
 
-// export const auth = (...requiredRoles: Role[]) => {
-  return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth = catchAsync(
+  async (req: Request, _res: Response, next: NextFunction) => {
+    const authorization = req.headers.authorization;
+    const token =
+      authorization?.startsWith("Bearer ") ? authorization.split(" ")[1] : undefined;
 
-
-
-
-        let token : string | undefined;
-      if (req.cookies?.accessToken) {
-      token = req.cookies.accessToken;
-    }
-
-      const authorization = req.headers.authorization;
-     
-         if (!token && authorization?.startsWith("Bearer ")) {
-      token = authorization.split(" ")[1];
-    }
-    
-       if (!token) {
+    if (!token) {
       throw createError(
         "You are not logged in. Please log in first.",
         httpStatus.UNAUTHORIZED
       );
     }
 
-    const verifyToken = jwtUtils.verifyToken(
+    const verified = jwtUtils.verifyToken(
       token,
       config.jwt_access_secret as string
     );
 
-    if (!verifyToken.success || !verifyToken.data) {
-        throw createError(
-        verifyToken.message || "Invalid or expired token",
+    if (!verified.success || !verified.data) {
+      throw createError(
+        verified.message || "Invalid or expired token",
         httpStatus.UNAUTHORIZED
       );
     }
 
-    const decoded = verifyToken.data as DecodeUser ;
+    const decoded = verified.data as DecodeUser;
 
-      if (!decoded.id || !decoded.email || !decoded.role) {
+    if (!decoded.id || !decoded.email || !decoded.role) {
       throw createError("Invalid token payload", httpStatus.UNAUTHORIZED);
     }
 
     const user = await prisma.user.findUnique({
-      where: {
-        id: decoded.id,
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        status: true,
       },
-      select:{
-        id:true,
-        name:true,
-        email:true,
-        role:true,
-        status:true
-      }
     });
 
     if (!user) {
-      throw createError("User not found log in again",httpStatus.UNAUTHORIZED);
+      throw createError("User not found. Please log in again.", httpStatus.UNAUTHORIZED);
     }
 
-    if (user.status === "SUSPENDED") {
-      throw createError("Your account has been suspended. Please contact support.",httpStatus.FORBIDDEN);
+    if (user.status === "SUSPENDED" || user.status === "BLOCKED" || user.status === "DELETED") {
+      throw createError(
+        "Your account has been suspended. Please contact support.",
+        httpStatus.FORBIDDEN
+      );
     }
 
-    if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
-      throw createError("Forbidden. You don't have permission to access this resource.",httpStatus.FORBIDDEN);
-    }
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
 
-    req.user = user;
+    next();
+  }
+);
+
+export const requireRole = (...roles: AuthUser["role"][]) => {
+  return catchAsync(async (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      throw createError(
+        "Forbidden. You don't have permission to access this resource.",
+        httpStatus.FORBIDDEN
+      );
+    }
 
     next();
   });
